@@ -81,6 +81,7 @@ function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
   const addToast = useToastStore((state) => state.addToast);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [edgeEditor, setEdgeEditor] = useState<EdgeEditorState | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStopTimerRef = useRef<number | null>(null);
   const defaultEdgeOptions = useMemo(
@@ -104,6 +105,19 @@ function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
       if (dragStopTimerRef.current) {
         window.clearTimeout(dragStopTimerRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const syncViewport = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    syncViewport();
+    mediaQuery.addEventListener('change', syncViewport);
+    return () => {
+      mediaQuery.removeEventListener('change', syncViewport);
     };
   }, []);
 
@@ -269,9 +283,12 @@ function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
         nodesDraggable
         nodesConnectable
         fitView
-        panOnDrag={false}
-        panActivationKeyCode="Alt"
+        panOnDrag={isMobileViewport}
+        panActivationKeyCode={isMobileViewport ? undefined : 'Alt'}
         zoomOnScroll
+        zoomOnPinch
+        minZoom={0.25}
+        maxZoom={2.5}
         deleteKeyCode={null}
         connectionLineType={ConnectionLineType.SmoothStep}
         connectionLineStyle={{
@@ -280,7 +297,9 @@ function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
           strokeDasharray: '6 4'
         }}
       >
-        <MiniMap pannable zoomable style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0' }} />
+        {!isMobileViewport ? (
+          <MiniMap pannable zoomable style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0' }} />
+        ) : null}
         <Background color="#e2e8f0" gap={20} />
         <Controls className="!scale-[0.9] sm:!scale-100" />
       </ReactFlow>
@@ -292,7 +311,9 @@ function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
             : `Validation: ${validation.issues.filter((issue) => issue.level === 'error').length} error(s)`}
         </p>
         <p className="text-[10px] text-slate-500 sm:text-[11px]">
-          Delete, Esc, Ctrl/Cmd+Z, Ctrl/Cmd+Y, Alt+Drag (Pan), tap node for details
+          {isMobileViewport
+            ? 'Pinch to zoom, drag canvas to pan, tap node for details'
+            : 'Delete, Esc, Ctrl/Cmd+Z, Ctrl/Cmd+Y, Alt+Drag (Pan), tap node for details'}
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { NodeConfigPanel } from './components/forms/NodeConfigPanel';
 import { NodePalette } from './components/sidebar/NodePalette';
 import { RightPanel } from './components/sidebar/RightPanel';
 import { useWorkflowShortcuts } from './hooks/useWorkflowShortcuts';
+import { useToastStore } from './store/toastStore';
 import { useWorkflowLibraryStore } from './store/workflowLibraryStore';
 import { useWorkflowStore } from './store/workflowStore';
 
@@ -14,15 +15,18 @@ function App() {
   useWorkflowShortcuts();
   const [mobilePane, setMobilePane] = useState<MobilePane>('build');
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const undo = useWorkflowStore((state) => state.undo);
   const redo = useWorkflowStore((state) => state.redo);
   const canUndo = useWorkflowStore((state) => state.past.length > 0);
   const canRedo = useWorkflowStore((state) => state.future.length > 0);
+  const addToast = useToastStore((state) => state.addToast);
   const selectedNodeId = useWorkflowStore((state) => state.selectedNodeId);
   const activeWorkflowId = useWorkflowLibraryStore((state) => state.activeWorkflowId);
   const workflows = useWorkflowLibraryStore((state) => state.workflows);
   const activeWorkflow = workflows.find((workflow) => workflow.id === activeWorkflowId) ?? null;
+  const canUseFullscreen = typeof document !== 'undefined' && !!document.documentElement.requestFullscreen;
 
   useEffect(() => {
     if (!selectedNodeId) {
@@ -36,13 +40,42 @@ function App() {
     }
   }, [mobilePane]);
 
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    syncFullscreenState();
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreenState);
+    };
+  }, []);
+
+  const onToggleFullscreen = async () => {
+    if (!canUseFullscreen) {
+      addToast('Fullscreen mode is not supported in this browser.', 'warning');
+      return;
+    }
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      await document.documentElement.requestFullscreen();
+    } catch {
+      addToast('Fullscreen request was blocked by the browser.', 'warning');
+    }
+  };
+
   return (
     <>
-      <div className="app-shell flex h-screen w-screen flex-col overflow-hidden bg-slate-100 text-slate-700">
-        <header className="flex min-h-12 flex-col gap-1 border-b border-slate-200 bg-white px-2 py-1.5 sm:px-4 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-2 lg:py-0">
+      <div className="app-shell flex h-[100dvh] w-screen flex-col overflow-hidden bg-slate-100 text-slate-700">
+        <header className="flex min-h-10 flex-col gap-1 border-b border-slate-200 bg-white px-2 py-1 sm:px-4 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:gap-2 lg:py-0">
           <div>
-            <h1 className="text-[13px] font-semibold text-slate-800 sm:text-sm">HR Workflow Designer Module</h1>
-            <p className="text-[10px] text-slate-500 sm:text-[11px]">
+            <h1 className="text-xs font-semibold text-slate-800 sm:text-sm">HR Workflow Designer Module</h1>
+            <p className="hidden text-[10px] text-slate-500 lg:block lg:text-[11px]">
               {activeWorkflow
                 ? `Editing: ${activeWorkflow.name}`
                 : 'Build onboarding, leave, and verification workflows.'}
@@ -66,11 +99,18 @@ function App() {
             >
               Redo
             </button>
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700 hover:bg-slate-100 lg:hidden"
+            >
+              {isFullscreen ? 'Exit full' : 'Full screen'}
+            </button>
             <span className="hidden text-[10px] text-slate-500 sm:inline">Ctrl/Cmd+Z / Ctrl/Cmd+Y</span>
           </div>
         </header>
 
-        <main className="min-h-0 flex flex-1 flex-col pb-14 lg:flex-row lg:pb-0">
+        <main className="min-h-0 flex flex-1 flex-col pb-[3.25rem] lg:flex-row lg:pb-0">
           <section className="hidden min-h-0 lg:flex lg:flex-none">
             <NodePalette />
           </section>
@@ -97,11 +137,11 @@ function App() {
           </section>
         </main>
 
-        <nav className="fixed bottom-2 left-1/2 z-40 flex h-9 -translate-x-1/2 overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm lg:hidden">
+        <nav className="fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex h-8 -translate-x-1/2 overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm lg:hidden">
           <button
             type="button"
             onClick={() => setMobilePane('build')}
-            className={`h-9 px-4 text-[11px] font-medium ${
+            className={`h-8 px-4 text-[11px] font-medium ${
               mobilePane === 'build' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'
             }`}
           >
@@ -110,7 +150,7 @@ function App() {
           <button
             type="button"
             onClick={() => setMobilePane('inspector')}
-            className={`h-9 px-4 text-[11px] font-medium ${
+            className={`h-8 px-4 text-[11px] font-medium ${
               mobilePane === 'inspector' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'
             }`}
           >

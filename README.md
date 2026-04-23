@@ -26,6 +26,8 @@ This prototype provides:
 - Mobile landscape build view combines Builder + Canvas in one screen
 - Mobile node tap opens details editor sheet automatically
 - Mobile compact controls and floating tab switcher for better canvas space
+- Mobile fullscreen toggle (browser-supported) and PWA standalone manifest
+- Mobile pinch-to-zoom on workflow canvas
 
 No backend persistence or authentication is included by design.
 

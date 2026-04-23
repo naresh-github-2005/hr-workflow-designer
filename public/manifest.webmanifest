@@ -1,0 +1,9 @@
+{
+  "name": "HR Workflow Designer",
+  "short_name": "Workflow Designer",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a"
+}
