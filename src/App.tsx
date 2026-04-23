@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
 import { ToastViewport } from './components/common/ToastViewport';
+import { NodeConfigPanel } from './components/forms/NodeConfigPanel';
 import { NodePalette } from './components/sidebar/NodePalette';
 import { RightPanel } from './components/sidebar/RightPanel';
 import { useWorkflowShortcuts } from './hooks/useWorkflowShortcuts';
 import { useWorkflowLibraryStore } from './store/workflowLibraryStore';
 import { useWorkflowStore } from './store/workflowStore';
 
-type MobilePane = 'builder' | 'canvas' | 'inspector';
+type MobilePane = 'build' | 'inspector';
 
 function App() {
   useWorkflowShortcuts();
-  const [mobilePane, setMobilePane] = useState<MobilePane>('canvas');
+  const [mobilePane, setMobilePane] = useState<MobilePane>('build');
 
   const undo = useWorkflowStore((state) => state.undo);
   const redo = useWorkflowStore((state) => state.redo);
   const canUndo = useWorkflowStore((state) => state.past.length > 0);
   const canRedo = useWorkflowStore((state) => state.future.length > 0);
+  const selectedNodeId = useWorkflowStore((state) => state.selectedNodeId);
+  const clearSelection = useWorkflowStore((state) => state.clearSelection);
   const activeWorkflowId = useWorkflowLibraryStore((state) => state.activeWorkflowId);
   const workflows = useWorkflowLibraryStore((state) => state.workflows);
   const activeWorkflow = workflows.find((workflow) => workflow.id === activeWorkflowId) ?? null;
@@ -56,31 +59,39 @@ function App() {
         </header>
 
         <main className="min-h-0 flex flex-1 flex-col pb-14 lg:flex-row lg:pb-0">
-          <section className={`${mobilePane === 'builder' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex lg:flex-none`}>
+          <section className="hidden min-h-0 lg:flex lg:flex-none">
             <NodePalette />
           </section>
-          <section className={`${mobilePane === 'canvas' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex`}>
+          <section className="hidden min-h-0 lg:flex lg:flex-1">
             <WorkflowCanvas />
           </section>
-          <section className={`${mobilePane === 'inspector' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex lg:flex-none`}>
+          <section className="hidden min-h-0 lg:flex lg:flex-none">
+            <RightPanel />
+          </section>
+
+          <section className={`${mobilePane === 'build' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:hidden`}>
+            <div className="flex min-h-0 flex-1">
+              <div className="h-full w-[260px] min-w-[220px] max-w-[42vw] border-r border-slate-200 bg-white">
+                <NodePalette mobileCompact />
+              </div>
+              <div className="min-w-0 flex-1">
+                <WorkflowCanvas />
+              </div>
+            </div>
+          </section>
+
+          <section className={`${mobilePane === 'inspector' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:hidden`}>
             <RightPanel />
           </section>
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 z-40 grid h-14 grid-cols-3 border-t border-slate-200 bg-white lg:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 grid h-14 grid-cols-2 border-t border-slate-200 bg-white lg:hidden">
           <button
             type="button"
-            onClick={() => setMobilePane('builder')}
-            className={`text-xs font-medium ${mobilePane === 'builder' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
+            onClick={() => setMobilePane('build')}
+            className={`text-xs font-medium ${mobilePane === 'build' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
           >
-            Builder
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobilePane('canvas')}
-            className={`text-xs font-medium ${mobilePane === 'canvas' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
-          >
-            Canvas
+            Build
           </button>
           <button
             type="button"
@@ -90,6 +101,29 @@ function App() {
             Inspector
           </button>
         </nav>
+
+        {mobilePane === 'build' && selectedNodeId ? (
+          <div
+            className="fixed inset-0 z-50 bg-slate-900/35 p-3 lg:hidden"
+            onClick={() => clearSelection()}
+          >
+            <div
+              className="mx-auto mt-2 max-h-[calc(100vh-5.8rem)] w-[min(30rem,100%)] overflow-y-auto rounded-lg"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => clearSelection()}
+                  className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+              <NodeConfigPanel />
+            </div>
+          </div>
+        ) : null}
 
         <ToastViewport />
       </div>

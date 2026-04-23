@@ -23,6 +23,8 @@ This prototype provides:
 - Toast notifications for key actions
 - Mobile-responsive layout with tabbed Builder/Canvas/Inspector views
 - Mobile portrait lock screen (editor enabled in landscape mode)
+- Mobile landscape build view combines Builder + Canvas in one screen
+- Mobile node tap opens details editor sheet automatically
 
 No backend persistence or authentication is included by design.
 
