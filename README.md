@@ -22,6 +22,7 @@ This prototype provides:
 - Multi-workflow save/load/delete with localStorage persistence
 - Toast notifications for key actions
 - Mobile-responsive layout with tabbed Builder/Canvas/Inspector views
+- Mobile portrait lock screen (editor enabled in landscape mode)
 
 No backend persistence or authentication is included by design.
 
