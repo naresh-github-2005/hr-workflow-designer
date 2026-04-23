@@ -21,10 +21,11 @@ This prototype provides:
 - Exactly 4 node handles (top/right/bottom/left) supporting both incoming and outgoing links
 - Multi-workflow save/load/delete with localStorage persistence
 - Toast notifications for key actions
-- Mobile-responsive layout with tabbed Builder/Canvas/Inspector views
+- Mobile-responsive layout with compact Build/Inspector tabs
 - Mobile portrait lock screen (editor enabled in landscape mode)
 - Mobile landscape build view combines Builder + Canvas in one screen
 - Mobile node tap opens details editor sheet automatically
+- Mobile compact controls and floating tab switcher for better canvas space
 
 No backend persistence or authentication is included by design.
 

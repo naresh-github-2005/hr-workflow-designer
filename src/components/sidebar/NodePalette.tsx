@@ -27,6 +27,8 @@ interface NodePaletteProps {
 }
 
 export function NodePalette({ mobileCompact = false }: NodePaletteProps) {
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const addNode = useWorkflowStore((state) => state.addNode);
   const loadTemplate = useWorkflowStore((state) => state.loadTemplate);
   const reset = useWorkflowStore((state) => state.reset);
   const setActiveWorkflowId = useWorkflowLibraryStore((state) => state.setActiveWorkflowId);
@@ -46,7 +48,7 @@ export function NodePalette({ mobileCompact = false }: NodePaletteProps) {
     >
       <h2 className="text-sm font-semibold text-slate-800">{mobileCompact ? 'Builder' : 'Workflow Builder'}</h2>
       <p className="mt-1 text-[11px] text-slate-500">
-        {mobileCompact ? 'Drag nodes into canvas' : 'Drag node types into the canvas.'}
+        {mobileCompact ? 'Tap to add nodes fast' : 'Drag node types into the canvas.'}
       </p>
 
       <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -83,24 +85,43 @@ export function NodePalette({ mobileCompact = false }: NodePaletteProps) {
         </div>
       </div>
 
-      <div className={mobileCompact ? 'mt-3 space-y-1.5' : 'mt-4 space-y-2'}>
+      <div className={mobileCompact ? 'mt-2.5 space-y-1.5' : 'mt-4 space-y-2'}>
         {paletteItems.map((item) => (
           <div
             key={item.type}
-            draggable
+            draggable={!mobileCompact}
             onDragStart={(event) => onDragStart(event, item.type)}
+            onClick={() => {
+              if (!mobileCompact) {
+                return;
+              }
+              const offset = (nodes.length % 8) * 26;
+              addNode(item.type, {
+                x: 260 + offset,
+                y: 120 + offset
+              });
+            }}
             className={`cursor-grab rounded-md border border-slate-200 bg-white shadow-sm active:cursor-grabbing ${
               mobileCompact ? 'p-1.5' : 'p-2'
             }`}
           >
-            <div className="flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-              <p className={`${mobileCompact ? 'text-xs' : 'text-sm'} font-medium text-slate-800`}>{item.label}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
+                <p className={`${mobileCompact ? 'text-[11px]' : 'text-sm'} font-medium text-slate-800`}>{item.label}</p>
+              </div>
+              {mobileCompact ? <span className="text-[10px] text-slate-500">Tap to add</span> : null}
             </div>
             {!mobileCompact ? <p className="mt-1 text-xs text-slate-500">{item.description}</p> : null}
           </div>
         ))}
       </div>
+
+      {mobileCompact ? (
+        <p className="mt-2 text-[10px] text-slate-500">
+          Tip: Tap item to add quickly, then long-press and drag node in canvas.
+        </p>
+      ) : null}
     </aside>
   );
 }

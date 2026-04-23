@@ -40,6 +40,7 @@ interface GraphSnapshot {
 interface WorkflowStoreState {
   nodes: WorkflowNode[];
   edges: Edge[];
+  lastAddedNodeId: string | null;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   validation: ValidationResult;
@@ -56,6 +57,7 @@ interface WorkflowStoreState {
   removeSelectedNode: () => void;
   removeSelectedEdge: () => void;
   updateEdgeLabel: (edgeId: string, label: string) => void;
+  clearLastAddedNodeId: () => void;
   selectNode: (id: string | null) => void;
   selectEdge: (id: string | null) => void;
   clearSelection: () => void;
@@ -131,6 +133,7 @@ function toast(message: string, variant: 'success' | 'info' | 'warning' | 'error
 export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
   nodes: [],
   edges: [],
+  lastAddedNodeId: null,
   selectedNodeId: null,
   selectedEdgeId: null,
   validation: emptyValidation,
@@ -145,6 +148,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       }
       return {
         nodes: nextNodes,
+        lastAddedNodeId: null,
         past: pushHistory(state),
         future: []
       };
@@ -158,6 +162,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       }
       return {
         edges: nextEdges,
+        lastAddedNodeId: null,
         past: pushHistory(state),
         future: []
       };
@@ -204,6 +209,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       return {
         nodes: nextNodes,
         edges: nextEdges,
+        lastAddedNodeId: null,
         selectedNodeId: nextSelectedNodeId,
         selectedEdgeId: nextSelectedEdgeId,
         past: pushHistory(state),
@@ -236,6 +242,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
       return {
         edges: nextEdges,
+        lastAddedNodeId: null,
         selectedEdgeId: nextSelectedEdgeId,
         past: pushHistory(state),
         future: []
@@ -265,6 +272,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
       return {
         edges: nextEdges,
+        lastAddedNodeId: null,
         selectedEdgeId: null,
         past: pushHistory(state),
         future: []
@@ -279,6 +287,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
     set((state) => ({
       nodes: [...state.nodes, node],
+      lastAddedNodeId: node.id,
       selectedNodeId: node.id,
       selectedEdgeId: null,
       past: pushHistory(state),
@@ -306,6 +315,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
     set((state) => ({
       nodes: [...state.nodes, duplicatedNode],
+      lastAddedNodeId: duplicatedNode.id,
       selectedNodeId: duplicatedNode.id,
       selectedEdgeId: null,
       past: pushHistory(state),
@@ -326,6 +336,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       edges: withEdgeDefaults(
         state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
       ),
+      lastAddedNodeId: null,
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
       selectedEdgeId: null,
       past: pushHistory(state),
@@ -351,6 +362,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
     set((state) => ({
       edges: withEdgeDefaults(state.edges.filter((edge) => edge.id !== edgeId)),
+      lastAddedNodeId: null,
       selectedEdgeId: null,
       past: pushHistory(state),
       future: []
@@ -393,6 +405,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
       return {
         edges: nextEdges,
+        lastAddedNodeId: null,
         past: pushHistory(state),
         future: []
       };
@@ -417,6 +430,11 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     set({
       selectedNodeId: null,
       selectedEdgeId: null
+    }),
+
+  clearLastAddedNodeId: () =>
+    set({
+      lastAddedNodeId: null
     }),
 
   updateSelectedNode: (updater) =>
@@ -446,6 +464,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
 
       return {
         nodes: nextNodes,
+        lastAddedNodeId: null,
         past: pushHistory(state),
         future: []
       };
@@ -467,6 +486,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       return {
         nodes: deepClone(previous.nodes),
         edges: withEdgeDefaults(deepClone(previous.edges)),
+        lastAddedNodeId: null,
         selectedNodeId: null,
         selectedEdgeId: null,
         past: state.past.slice(0, -1),
@@ -493,6 +513,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
       return {
         nodes: deepClone(next.nodes),
         edges: withEdgeDefaults(deepClone(next.edges)),
+        lastAddedNodeId: null,
         selectedNodeId: null,
         selectedEdgeId: null,
         past: [...state.past, current].slice(-MAX_HISTORY),
@@ -509,6 +530,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     set((state) => ({
       nodes: deepClone(template.nodes),
       edges: withEdgeDefaults(deepClone(template.edges)),
+      lastAddedNodeId: null,
       selectedNodeId: null,
       selectedEdgeId: null,
       past: pushHistory(state),
@@ -522,6 +544,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     set((state) => ({
       nodes: deepClone(workflow.nodes),
       edges: withEdgeDefaults(deepClone(workflow.edges)),
+      lastAddedNodeId: null,
       selectedNodeId: null,
       selectedEdgeId: null,
       past: pushHistory(state),
@@ -553,6 +576,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     set((state) => ({
       nodes: [],
       edges: [],
+      lastAddedNodeId: null,
       selectedNodeId: null,
       selectedEdgeId: null,
       validation: emptyValidation,

@@ -5,7 +5,7 @@ interface NodeHandlesProps {
 }
 
 export function NodeHandles({ colorClass }: NodeHandlesProps) {
-  const baseClass = `!h-3 !w-3 !border-2 !border-white ${colorClass}`;
+  const baseClass = `!h-3.5 !w-3.5 !border-2 !border-white ${colorClass}`;
 
   return (
     <>

@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useState, type DragEvent, type MouseEvent as ReactMouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type MouseEvent as ReactMouseEvent
+} from 'react';
 import ReactFlow, {
   Background,
   ConnectionMode,
@@ -45,10 +53,20 @@ function clampPopupPosition(
   return { x: safeX, y: safeY };
 }
 
-function CanvasContent() {
+interface CanvasContentProps {
+  onMobileNodeEditRequest?: () => void;
+}
+
+interface WorkflowCanvasProps {
+  onMobileNodeEditRequest?: () => void;
+}
+
+function CanvasContent({ onMobileNodeEditRequest }: CanvasContentProps) {
   const reactFlow = useReactFlow();
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
+  const lastAddedNodeId = useWorkflowStore((state) => state.lastAddedNodeId);
+  const clearLastAddedNodeId = useWorkflowStore((state) => state.clearLastAddedNodeId);
   const onNodesChange = useWorkflowStore((state) => state.onNodesChange);
   const onEdgesChange = useWorkflowStore((state) => state.onEdgesChange);
   const onConnect = useWorkflowStore((state) => state.onConnect);
@@ -63,6 +81,8 @@ function CanvasContent() {
   const addToast = useToastStore((state) => state.addToast);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [edgeEditor, setEdgeEditor] = useState<EdgeEditorState | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStopTimerRef = useRef<number | null>(null);
   const defaultEdgeOptions = useMemo(
     () => ({
       type: 'smoothstep',
@@ -78,6 +98,33 @@ function CanvasContent() {
   );
 
   useAutoValidation();
+
+  useEffect(() => {
+    return () => {
+      if (dragStopTimerRef.current) {
+        window.clearTimeout(dragStopTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!lastAddedNodeId) {
+      return;
+    }
+    const node = nodes.find((item) => item.id === lastAddedNodeId);
+    if (!node) {
+      clearLastAddedNodeId();
+      return;
+    }
+
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (isMobile) {
+      const centerX = node.position.x + 105;
+      const centerY = node.position.y + 52;
+      reactFlow.setCenter(centerX, centerY, { zoom: Math.max(reactFlow.getZoom(), 1), duration: 240 });
+    }
+    clearLastAddedNodeId();
+  }, [clearLastAddedNodeId, lastAddedNodeId, nodes, reactFlow]);
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -138,6 +185,24 @@ function CanvasContent() {
     addToast('Canvas fit to screen.', 'info');
   }, [addToast, reactFlow]);
 
+  const onNodeClick = useCallback(
+    (event: ReactMouseEvent, node: Node<WorkflowNodeData>) => {
+      event.preventDefault();
+      selectNode(node.id);
+      if (isDraggingRef.current) {
+        return;
+      }
+      if (!onMobileNodeEditRequest) {
+        return;
+      }
+      const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+      if (isMobile) {
+        onMobileNodeEditRequest();
+      }
+    },
+    [onMobileNodeEditRequest, selectNode]
+  );
+
   return (
     <div
       className="relative h-full w-full"
@@ -156,6 +221,25 @@ function CanvasContent() {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onNodeContextMenu={onNodeContextMenu}
+        onNodeClick={onNodeClick}
+        onNodeDragStart={() => {
+          if (dragStopTimerRef.current) {
+            window.clearTimeout(dragStopTimerRef.current);
+            dragStopTimerRef.current = null;
+          }
+          isDraggingRef.current = true;
+          setContextMenu(null);
+          setEdgeEditor(null);
+        }}
+        onNodeDragStop={() => {
+          if (dragStopTimerRef.current) {
+            window.clearTimeout(dragStopTimerRef.current);
+          }
+          dragStopTimerRef.current = window.setTimeout(() => {
+            isDraggingRef.current = false;
+            dragStopTimerRef.current = null;
+          }, 120);
+        }}
         onEdgeClick={(event, edge) => {
           event.preventDefault();
           event.stopPropagation();
@@ -182,6 +266,8 @@ function CanvasContent() {
         defaultEdgeOptions={defaultEdgeOptions}
         style={{ backgroundColor: '#f8fafc' }}
         connectionMode={ConnectionMode.Loose}
+        nodesDraggable
+        nodesConnectable
         fitView
         panOnDrag={false}
         panActivationKeyCode="Alt"
@@ -196,7 +282,7 @@ function CanvasContent() {
       >
         <MiniMap pannable zoomable style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0' }} />
         <Background color="#e2e8f0" gap={20} />
-        <Controls />
+        <Controls className="!scale-[0.9] sm:!scale-100" />
       </ReactFlow>
 
       <div className="pointer-events-none absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] text-slate-600 shadow-sm sm:left-3 sm:top-3 sm:bottom-auto sm:max-w-sm sm:text-xs">
@@ -206,7 +292,7 @@ function CanvasContent() {
             : `Validation: ${validation.issues.filter((issue) => issue.level === 'error').length} error(s)`}
         </p>
         <p className="text-[10px] text-slate-500 sm:text-[11px]">
-          Delete, Esc, Ctrl/Cmd+Z, Ctrl/Cmd+Y, Alt+Drag (Pan)
+          Delete, Esc, Ctrl/Cmd+Z, Ctrl/Cmd+Y, Alt+Drag (Pan), tap node for details
         </p>
       </div>
 
@@ -290,11 +376,11 @@ function CanvasContent() {
   );
 }
 
-export function WorkflowCanvas() {
+export function WorkflowCanvas({ onMobileNodeEditRequest }: WorkflowCanvasProps = {}) {
   return (
     <div className="h-full min-h-[360px] w-full bg-slate-100 lg:min-h-0">
       <ReactFlowProvider>
-        <CanvasContent />
+        <CanvasContent onMobileNodeEditRequest={onMobileNodeEditRequest} />
       </ReactFlowProvider>
     </div>
   );
