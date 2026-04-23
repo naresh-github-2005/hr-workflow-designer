@@ -32,6 +32,19 @@ interface EdgeEditorState {
   value: string;
 }
 
+function clampPopupPosition(
+  x: number,
+  y: number,
+  popupWidth: number,
+  popupHeight: number
+): { x: number; y: number } {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const safeX = Math.min(Math.max(8, x), Math.max(8, viewportWidth - popupWidth - 8));
+  const safeY = Math.min(Math.max(8, y), Math.max(8, viewportHeight - popupHeight - 8));
+  return { x: safeX, y: safeY };
+}
+
 function CanvasContent() {
   const reactFlow = useReactFlow();
   const nodes = useWorkflowStore((state) => state.nodes);
@@ -126,7 +139,13 @@ function CanvasContent() {
   }, [addToast, reactFlow]);
 
   return (
-    <div className="relative h-full w-full" onClick={() => setContextMenu(null)}>
+    <div
+      className="relative h-full w-full"
+      onClick={() => {
+        setContextMenu(null);
+        setEdgeEditor(null);
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -142,10 +161,11 @@ function CanvasContent() {
           event.stopPropagation();
           selectEdge(edge.id);
           setContextMenu(null);
+          const { x, y } = clampPopupPosition(event.clientX, event.clientY, 224, 132);
           setEdgeEditor({
             edgeId: edge.id,
-            x: event.clientX,
-            y: event.clientY,
+            x,
+            y,
             value: typeof edge.label === 'string' ? edge.label : ''
           });
         }}
@@ -179,18 +199,18 @@ function CanvasContent() {
         <Controls />
       </ReactFlow>
 
-      <div className="pointer-events-none absolute left-3 top-3 rounded border border-slate-200 bg-white/95 px-3 py-1.5 text-xs text-slate-600 shadow-sm">
+      <div className="pointer-events-none absolute bottom-2 left-2 max-w-[calc(100%-1rem)] rounded border border-slate-200 bg-white/95 px-2.5 py-1.5 text-[11px] text-slate-600 shadow-sm sm:left-3 sm:top-3 sm:bottom-auto sm:max-w-sm sm:text-xs">
         <p className={validation.isValid ? 'text-emerald-700' : 'text-amber-700'}>
           {validation.isValid
             ? 'Validation: ready to simulate'
             : `Validation: ${validation.issues.filter((issue) => issue.level === 'error').length} error(s)`}
         </p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[10px] text-slate-500 sm:text-[11px]">
           Delete, Esc, Ctrl/Cmd+Z, Ctrl/Cmd+Y, Alt+Drag (Pan)
         </p>
       </div>
 
-      <div className="absolute right-3 top-3">
+      <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
         <button
           type="button"
           onClick={onFitToScreen}
@@ -202,8 +222,8 @@ function CanvasContent() {
 
       {contextMenu ? (
         <NodeContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
+          x={clampPopupPosition(contextMenu.x, contextMenu.y, 160, 126).x}
+          y={clampPopupPosition(contextMenu.x, contextMenu.y, 160, 126).y}
           onEdit={() => {
             selectNode(contextMenu.nodeId);
             setContextMenu(null);
@@ -222,7 +242,7 @@ function CanvasContent() {
 
       {edgeEditor ? (
         <div
-          className="fixed z-40 w-56 rounded-md border border-slate-200 bg-white p-2 shadow-lg"
+          className="fixed z-40 w-[min(14rem,calc(100vw-1rem))] rounded-md border border-slate-200 bg-white p-2 shadow-lg"
           style={{ left: edgeEditor.x, top: edgeEditor.y }}
           onClick={(event) => event.stopPropagation()}
         >
@@ -272,7 +292,7 @@ function CanvasContent() {
 
 export function WorkflowCanvas() {
   return (
-    <div className="h-full w-full bg-slate-100">
+    <div className="h-full min-h-[360px] w-full bg-slate-100 lg:min-h-0">
       <ReactFlowProvider>
         <CanvasContent />
       </ReactFlowProvider>

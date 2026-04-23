@@ -21,6 +21,7 @@ This prototype provides:
 - Exactly 4 node handles (top/right/bottom/left) supporting both incoming and outgoing links
 - Multi-workflow save/load/delete with localStorage persistence
 - Toast notifications for key actions
+- Mobile-responsive layout with tabbed Builder/Canvas/Inspector views
 
 No backend persistence or authentication is included by design.
 

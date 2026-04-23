@@ -13,7 +13,7 @@ export function ToastViewport() {
   const removeToast = useToastStore((state) => state.removeToast);
 
   return (
-    <div className="pointer-events-none fixed right-4 top-4 z-50 flex w-[320px] flex-col gap-2">
+    <div className="pointer-events-none fixed left-1/2 top-3 z-50 flex w-[calc(100vw-1rem)] max-w-[320px] -translate-x-1/2 flex-col gap-2 sm:left-auto sm:right-4 sm:top-4 sm:w-[320px] sm:translate-x-0">
       {toasts.map((toast) => (
         <div
           key={toast.id}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas';
 import { ToastViewport } from './components/common/ToastViewport';
 import { NodePalette } from './components/sidebar/NodePalette';
@@ -6,8 +7,11 @@ import { useWorkflowShortcuts } from './hooks/useWorkflowShortcuts';
 import { useWorkflowLibraryStore } from './store/workflowLibraryStore';
 import { useWorkflowStore } from './store/workflowStore';
 
+type MobilePane = 'builder' | 'canvas' | 'inspector';
+
 function App() {
   useWorkflowShortcuts();
+  const [mobilePane, setMobilePane] = useState<MobilePane>('canvas');
 
   const undo = useWorkflowStore((state) => state.undo);
   const redo = useWorkflowStore((state) => state.redo);
@@ -18,16 +22,18 @@ function App() {
   const activeWorkflow = workflows.find((workflow) => workflow.id === activeWorkflowId) ?? null;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-100 text-slate-700">
-      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-100 text-slate-700">
+      <header className="flex min-h-14 flex-col gap-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 lg:h-14 lg:flex-row lg:items-center lg:justify-between lg:py-0">
         <div>
           <h1 className="text-sm font-semibold text-slate-800">HR Workflow Designer Module</h1>
           <p className="text-[11px] text-slate-500">
-            {activeWorkflow ? `Editing: ${activeWorkflow.name}` : 'Build onboarding, leave, and verification workflows.'}
+            {activeWorkflow
+              ? `Editing: ${activeWorkflow.name}`
+              : 'Build onboarding, leave, and verification workflows.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start lg:self-auto">
           <button
             type="button"
             onClick={undo}
@@ -44,17 +50,45 @@ function App() {
           >
             Redo
           </button>
-          <span className="text-[11px] text-slate-500">Ctrl/Cmd+Z / Ctrl/Cmd+Y</span>
+          <span className="hidden text-[11px] text-slate-500 sm:inline">Ctrl/Cmd+Z / Ctrl/Cmd+Y</span>
         </div>
       </header>
 
-      <main className="flex h-[calc(100vh-3.5rem)]">
-        <NodePalette />
-        <section className="min-w-0 flex-1">
+      <main className="min-h-0 flex flex-1 flex-col pb-14 lg:flex-row lg:pb-0">
+        <section className={`${mobilePane === 'builder' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex lg:flex-none`}>
+          <NodePalette />
+        </section>
+        <section className={`${mobilePane === 'canvas' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex`}>
           <WorkflowCanvas />
         </section>
-        <RightPanel />
+        <section className={`${mobilePane === 'inspector' ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex lg:flex-none`}>
+          <RightPanel />
+        </section>
       </main>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 grid h-14 grid-cols-3 border-t border-slate-200 bg-white lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobilePane('builder')}
+          className={`text-xs font-medium ${mobilePane === 'builder' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
+        >
+          Builder
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('canvas')}
+          className={`text-xs font-medium ${mobilePane === 'canvas' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
+        >
+          Canvas
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('inspector')}
+          className={`text-xs font-medium ${mobilePane === 'inspector' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'}`}
+        >
+          Inspector
+        </button>
+      </nav>
 
       <ToastViewport />
     </div>
