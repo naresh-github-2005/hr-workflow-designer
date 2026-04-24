@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/75fefa93-4cc0-410e-ad42-e2ab720ed23a
+
 # HR Workflow Designer Module (Prototype)
 
 React + TypeScript + React Flow prototype for HR admins to design, configure, validate, and simulate internal workflows like onboarding, leave approval, and document verification.
