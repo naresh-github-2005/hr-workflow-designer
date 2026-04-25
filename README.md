@@ -41,7 +41,7 @@ No backend persistence or authentication is included by design.
 flowchart LR
   U[HR Admin] --> A[App Shell\nApp.tsx]
 
-  subgraph UI[UI Layer]
+  subgraph UI ["UI Layer"]
     C[Workflow Canvas\ncomponents/canvas]
     N[Node Renderers\ncomponents/nodes]
     F[Node Forms\ncomponents/forms]
@@ -50,13 +50,13 @@ flowchart LR
     T[Toast Viewport\ncomponents/common]
   end
 
-  subgraph STATE[State Layer (Zustand)]
+  subgraph STATE ["State Layer (Zustand)"]
     WS[(workflowStore)]
     WLS[(workflowLibraryStore)]
     TS[(toastStore)]
   end
 
-  subgraph DOMAIN[Domain + Services]
+  subgraph DOMAIN ["Domain + Services"]
     H[Hooks\nuseAutomations / useAutoValidation / useWorkflowShortcuts]
     V[Validation\nvalidation/workflowValidator.ts]
     API[Mock API\napi/mockApi.ts]
