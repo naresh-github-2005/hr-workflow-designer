@@ -35,6 +35,63 @@ No backend persistence or authentication is included by design.
 
 ## Architecture
 
+### Architecture Diagram
+
+```mermaid
+flowchart LR
+  U[HR Admin] --> A[App Shell\nApp.tsx]
+
+  subgraph UI[UI Layer]
+    C[Workflow Canvas\ncomponents/canvas]
+    N[Node Renderers\ncomponents/nodes]
+    F[Node Forms\ncomponents/forms]
+    S[Sidebar Panels\ncomponents/sidebar]
+    X[Sandbox\ncomponents/sandbox]
+    T[Toast Viewport\ncomponents/common]
+  end
+
+  subgraph STATE[State Layer (Zustand)]
+    WS[(workflowStore)]
+    WLS[(workflowLibraryStore)]
+    TS[(toastStore)]
+  end
+
+  subgraph DOMAIN[Domain + Services]
+    H[Hooks\nuseAutomations / useAutoValidation / useWorkflowShortcuts]
+    V[Validation\nvalidation/workflowValidator.ts]
+    API[Mock API\napi/mockApi.ts]
+    UTL[Utilities\nutils/nodeFactory.ts + utils/templates.ts]
+    TY[Types\ntypes/workflow.ts]
+    LS[(localStorage)]
+  end
+
+  A --> C
+  A --> S
+  A --> F
+  A --> X
+  A --> T
+
+  C --> N
+  C --> WS
+  S --> WS
+  F --> WS
+  X --> WS
+
+  H --> WS
+  H --> API
+  H --> V
+
+  WS --> V
+  WS --> UTL
+  WS --> TY
+
+  WLS <--> LS
+  S --> WLS
+
+  X --> API
+  TS --> T
+```
+
 ### State Management
 
 - `Zustand` store (`src/store/workflowStore.ts`) holds:
